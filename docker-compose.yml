@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  # 0. The Phase 7 Upgrade: PostgreSQL Database
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: ai_pedal_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ai_user
+      POSTGRES_PASSWORD: ai_password
+      POSTGRES_DB: ai_pedal_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 1. The main Python AI Brain (FastAPI API server + RLHF jobs)
+  ai-pedal-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai_pedal_backend
+    restart: unless-stopped
+    depends_on:
+      - postgres-db
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DATABASE_URL=postgresql://ai_user:ai_password@postgres-db:5432/ai_pedal_db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ENVIRONMENT=production
+    volumes:
+      - ./data:/app/data
+      - ./frontend:/app/frontend
+
+volumes:
+  sqlite_data:
+  pgdata:

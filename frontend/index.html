@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Guitar Pedal Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --panel-bg: rgba(31, 40, 51, 0.7);
+            --accent-cyan: #66fcf1;
+            --accent-teal: #45a29e;
+            --text-main: #c5c6c7;
+            --text-bright: #ffffff;
+            --danger: #ff4b4b;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 15% 50%, rgba(102, 252, 241, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(69, 162, 158, 0.05), transparent 25%);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(11, 12, 16, 0.9);
+            border-right: 1px solid rgba(102, 252, 241, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+        }
+
+        .nav-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(102, 252, 241, 0.1);
+            color: var(--accent-cyan);
+            box-shadow: inset 3px 0 0 var(--accent-cyan);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--text-bright);
+            margin: 0;
+            font-weight: 800;
+        }
+
+        .status-badge {
+            background: rgba(102, 252, 241, 0.1);
+            color: var(--accent-cyan);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid rgba(102, 252, 241, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-cyan);
+            animation: pulse-anim 1.5s infinite;
+        }
+
+        @keyframes pulse-anim {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(102, 252, 241, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(102, 252, 241, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(102, 252, 241, 0);
+            }
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 252, 241, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            color: var(--text-bright);
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Knobs UI Simulation */
+        .knob-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 2rem;
+        }
+
+        .knob-wrapper {
+            text-align: center;
+        }
+
+        .knob {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(from 225deg, var(--accent-cyan) 0%, var(--accent-teal) 75%, #111 75%);
+            margin: 0 auto 1rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .knob-inner {
+            width: 70px;
+            height: 70px;
+            background: #1f2833;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: var(--text-bright);
+            font-size: 1.2rem;
+        }
+
+        .knob-indicator {
+            position: absolute;
+            width: 4px;
+            height: 15px;
+            background: var(--accent-cyan);
+            bottom: 5px;
+            border-radius: 2px;
+            transform-origin: 50% -25px;
+            transform: rotate(45deg);
+            box-shadow: 0 0 5px var(--accent-cyan);
+        }
+
+        .knob-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        /* File Upload */
+        .upload-area {
+            border: 2px dashed rgba(102, 252, 241, 0.3);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            background: rgba(102, 252, 241, 0.05);
+            border-color: var(--accent-cyan);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .btn {
+            background: transparent;
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.5);
+        }
+
+        /* RLHF Table */
+        .rlhf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .rlhf-table th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .rlhf-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-bright);
+        }
+
+        .action-btn {
+            background: rgba(255, 75, 75, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(255, 75, 75, 0.3);
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 75, 75, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand">
+            🎸 AI Pedal C-Panel
+        </div>
+        <div class="nav-item active">Live Radar</div>
+        <div class="nav-item">Target Search (Source Separation)</div>
+        <div class="nav-item">RLHF Database</div>
+        <div class="nav-item">System Settings</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Control Matrix</h1>
+            <div class="status-badge">
+                <div class="pulse"></div>
+                PostgreSQL & OSC Bridge: ONLINE
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+
+            <!-- Live Hardware Monitor (OSC) -->
+            <div class="glass-panel">
+                <h3 class="panel-title">Live Hardware Monitor <span>📡</span></h3>
+                <p style="color: var(--text-main); font-size: 0.9rem; margin-bottom: 2rem;">Real-time sync with physical
+                    knobs (via OSC/Sockets).</p>
+
+                <div class="knob-container">
+                    <div class="knob-wrapper">
+                        <div class="knob"
+                            style="background: conic-gradient(from 225deg, var(--accent-cyan) 0%, var(--accent-teal) 75%, #111 75%);">
+                            <div class="knob-inner">7.5</div>
+                            <div class="knob-indicator" style="transform: rotate(45deg);"></div>
+                        </div>
+                        <div class="knob-label">Drive</div>
+                    </div>
+
+                    <div class="knob-wrapper">
+                        <div class="knob"
+                            style="background: conic-gradient(from 225deg, var(--accent-cyan) 0%, var(--accent-teal) 40%, #111 40%);">
+                            <div class="knob-inner">4.0</div>
+                            <div class="knob-indicator" style="transform: rotate(-30deg);"></div>
+                        </div>
+                        <div class="knob-label">Tone</div>
+                    </div>
+
+                    <div class="knob-wrapper">
+                        <div class="knob"
+                            style="background: conic-gradient(from 225deg, var(--accent-cyan) 0%, var(--accent-teal) 90%, #111 90%);">
+                            <div class="knob-inner">9.0</div>
+                            <div class="knob-indicator" style="transform: rotate(90deg);"></div>
+                        </div>
+                        <div class="knob-label">Level</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tone Search & RAG -->
+            <div class="glass-panel">
+                <h3 class="panel-title">Target Reverse-Engineering <span>🎯</span></h3>
+                <div class="upload-area">
+                    <span class="upload-icon">🎵</span>
+                    <h3>Drag & Drop MP3 File</h3>
+                    <p>AI will extract the isolated guitar stem via Demucs and query ChromaDB.</p>
+                    <button class="btn">Browse Files</button>
+                </div>
+            </div>
+
+            <!-- RLHF Logic Table -->
+            <div class="glass-panel" style="grid-column: span 2;">
+                <h3 class="panel-title">RLHF Real-Time Tuning Logs (PostgreSQL) <span>📝</span></h3>
+                <table class="rlhf-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Target Vibe</th>
+                            <th>AI Initial Value (Gain)</th>
+                            <th>User Correction (Manual)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Just now</td>
+                            <td>Fuzz Metal</td>
+                            <td>0.50</td>
+                            <td style="color: var(--accent-cyan); font-weight: bold;">0.85</td>
+                            <td>Adjusted</td>
+                            <td><button class="action-btn">Reject</button></td>
+                        </tr>
+                        <tr>
+                            <td>2 mins ago</td>
+                            <td>Clean Ambient</td>
+                            <td>0.20</td>
+                            <td style="color: var(--accent-cyan); font-weight: bold;">0.10</td>
+                            <td>Committed to DB</td>
+                            <td><button class="action-btn">Reject</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Phase 8: Network & OTA Protections Settings -->
+            <div class="glass-panel" style="grid-column: span 2; border-color: rgba(255, 75, 75, 0.3);">
+                <h3 class="panel-title">System Settings & Network Protections <span>🛜</span></h3>
+                <p style="color: var(--text-main); font-size: 0.9rem; margin-bottom: 2rem;">Prevent gig disasters by
+                    locking down network operations.</p>
+
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <label
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                        <span>
+                            <strong>📡 Offline Gig Mode</strong><br>
+                            <span style="font-size: 0.8rem; color: var(--text-main);">Kill all outbound network
+                                requests. No Cloud Sync. No Updates. Pure Local DSP computation only.</span>
+                        </span>
+                        <input type="checkbox" style="width: 24px; height: 24px; accent-color: var(--danger);">
+                    </label>
+
+                    <label
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                        <span>
+                            <strong>🔄 OTA Auto-Updates (Watchtower CI/CD)</strong><br>
+                            <span style="font-size: 0.8rem; color: var(--text-main);">Silently check GitHub Container
+                                Registry every 24h & patch AI logic. Turn OFF before gigs.</span>
+                        </span>
+                        <input type="checkbox" checked
+                            style="width: 24px; height: 24px; accent-color: var(--accent-cyan);">
+                    </label>
+
+                    <label
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                        <span>
+                            <strong>☁️ Phase 10: Anonymous Cloud Sync</strong><br>
+                            <span style="font-size: 0.8rem; color: var(--text-main);">Upload RLHF tone corrections to
+                                the Global Tone Hub to improve AI for everyone.</span>
+                        </span>
+                        <input type="checkbox" checked
+                            style="width: 24px; height: 24px; accent-color: var(--accent-cyan);">
+                    </label>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="btn" style="border-color: var(--danger); color: var(--danger);">Reboot
+                        Devices</button>
+                    <button class="btn"
+                        onclick="alert('Rollback sequence initiated: Reverting to previous Docker Image Hash...')">🔄
+                        Rollback Firmware</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>
