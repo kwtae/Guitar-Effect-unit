@@ -1,41 +1,34 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  # 0. The Phase 7 Upgrade: PostgreSQL Database
   postgres-db:
-    image: postgres:15-alpine
-    container_name: ai_pedal_db
-    restart: unless-stopped
+    image: postgres:latest
     environment:
-      POSTGRES_USER: ai_user
-      POSTGRES_PASSWORD: ai_password
-      POSTGRES_DB: ai_pedal_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db_name
+    healthcheck:
+      test: [ 'CMD', 'pg_isready', '-U', 'user' ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - backend_net
 
-  # 1. The main Python AI Brain (FastAPI API server + RLHF jobs)
   ai-pedal-backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ai_pedal_backend
-    restart: unless-stopped
-    depends_on:
-      - postgres-db
-    ports:
-      - "8000:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    build: ./ai-pedal-backend
     environment:
-      - DATABASE_URL=postgresql://ai_user:ai_password@postgres-db:5432/ai_pedal_db
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - ENVIRONMENT=production
-    volumes:
-      - ./data:/app/data
-      - ./frontend:/app/frontend
+      DATABASE_URL: postgres://user:password@postgres-db:5432/db_name
+      ENV_VAR_ONE: value_one
+      ENV_VAR_TWO: value_two
+    healthcheck:
+      test: [ 'CMD-SHELL', 'curl -f http://localhost:5000/health || exit 1' ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - backend_net
 
-volumes:
-  sqlite_data:
-  pgdata:
+networks:
+  backend_net:
+    driver: bridge
