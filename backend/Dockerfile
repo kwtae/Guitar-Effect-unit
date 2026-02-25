@@ -1,32 +1,33 @@
-# Use an official Python runtime as a parent image, optimized for size
-FROM python:3.12-slim
+# Start from a minimal base image
+FROM python:3.10-slim
 
-# Set working directory in the container
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Create a non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# Set the working directory
 WORKDIR /app
 
-# Install system dependencies (required for some python audio/gpio packages or psycopg2 if we swap from SQLite)
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Copy only requirements to leverage Docker cache
+COPY requirements.txt /app/
 
-# Copy requirements file first to leverage Docker cache
-COPY requirements.txt .
-
-# Install any needed packages specified in requirements.txt
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the backend directory contents into the container at /app/backend
-# Notice we are copying the backend directory INTO a backend folder inside /app
-# This preserves the python module structure `from backend.database import get_db`
-COPY . /app/backend
+# Copy the rest of the application code
+COPY . /app/
 
-# Set the python path so modules resolve correctly
-ENV PYTHONPATH=/app
+# Change ownership to the non-root user
+RUN chown -R appuser:appgroup /app
 
-# Make port 8000 available to the world outside this container
-EXPOSE 8000
+# Switch to the non-root user
+USER appuser
 
-# Run FastAPI when the container launches using Uvicorn
-# We use host 0.0.0.0 so it's accessible from other devices on the LAN (like the frontend mobile app)
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl -f http://localhost:8000/health || exit 1
+
+# Command to run the application
+CMD ["python", "app.py"]
